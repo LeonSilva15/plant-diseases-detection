@@ -103,14 +103,21 @@ Run checks:
 
 ```bash
 ruff check .
-pytest
+pytest -m "not model"
+```
+
+Run the optional TensorFlow model artifact smoke test:
+
+```bash
+RUN_MODEL_SMOKE=1 pytest -m model
 ```
 
 ## Deployment
 
 This repo is configured for Hugging Face Spaces with Gradio through the README front matter.
-The GitHub Actions workflow runs lint and tests on every push and pull request. On pushes to
-`main`, it deploys to a Space when both values are configured:
+The GitHub Actions workflow runs lint and fast tests on every push and pull request. The
+TensorFlow model artifact smoke test is available from the manual workflow dispatch path. On
+pushes to `main`, the workflow deploys to a Space when both values are configured:
 
 - Repository secret `HF_TOKEN`: Hugging Face token with write access.
 - Repository variable `HF_SPACE`: target Space id, for example

@@ -1,3 +1,13 @@
+.DS_Store
 .DS_store
-.idea
-dataset
+.idea/
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.tmp/
+plant-disease-mpl/
+matplotlib-*/
+dataset/

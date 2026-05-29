@@ -24,13 +24,12 @@ that accepts upload or webcam input and returns top disease predictions with con
 
 > Live demo: https://huggingface.co/spaces/LeonSilva15/plant-diseases-detection
 
-## What This Demonstrates
+## Project Key Points
 
 - Image classification with TensorFlow/Keras and MobileNet transfer learning.
 - A deployable inference path separated from the original training notebook.
 - A stable model contract: `models/compressed_model.h5` plus `models/labels.json`.
 - Local CLI inference, Gradio UI inference, automated tests, linting, and CI deployment wiring.
-- Clear product limitations for portfolio review.
 
 ## Model
 

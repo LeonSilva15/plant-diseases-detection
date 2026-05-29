@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "plant-diseases-detection"
+version = "0.1.0"
+description = "Production-ready plant disease image classifier demo using a compressed MobileNet model."
+readme = "README.md"
+requires-python = ">=3.10,<3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "Leon Silva" }
+]
+dependencies = [
+  "fastapi==0.112.2",
+  "gradio==4.44.1",
+  "huggingface-hub==0.25.2",
+  "numpy==1.26.4",
+  "Pillow==10.4.0",
+  "pydantic==2.8.2",
+  "starlette==0.38.6",
+  "tensorflow-cpu==2.15.1; platform_system == 'Linux'",
+  "tensorflow-macos==2.15.0; platform_system == 'Darwin' and platform_machine == 'arm64'",
+  "tensorflow==2.15.1; platform_system == 'Darwin' and platform_machine != 'arm64'",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest==8.3.5",
+  "ruff==0.11.2",
+]
+
+[project.scripts]
+plant-disease-predict = "plant_disease_detection.predict:main"
+
+[tool.setuptools.packages.find]
+include = ["plant_disease_detection*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "model: requires TensorFlow and the checked-in Keras model artifact",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = ["model-creation.ipynb"]
+
+[tool.ruff.lint]
+select = ["B", "E", "F", "I", "UP"]

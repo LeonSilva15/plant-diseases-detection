@@ -7,10 +7,13 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from plant_disease_detection.config import configured_model_path
+from plant_disease_detection.config import configured_hf_space, configured_model_path
 from plant_disease_detection.errors import ModelLoadError
 
 HDF5_SIGNATURE = b"\x89HDF\r\n\x1a\n"
+GIT_LFS_POINTER_PREFIX = b"version https://git-lfs.github.com/spec/"
+GIT_LFS_POINTER_MIN_BYTES = 100
+GIT_LFS_POINTER_MAX_BYTES = 200
 
 
 @lru_cache(maxsize=1)
@@ -21,7 +24,7 @@ def load_keras_model(model_path: str | None = None) -> Any:
     if not resolved_path.exists():
         raise ModelLoadError(f"Model file not found: {resolved_path}")
     if resolved_path.suffix.lower() in {".h5", ".hdf5"}:
-        _validate_hdf5_model_file(resolved_path)
+        resolved_path = _resolve_hdf5_model_path(resolved_path)
 
     try:
         from tensorflow import keras
@@ -31,6 +34,20 @@ def load_keras_model(model_path: str | None = None) -> Any:
         ) from exc
 
     return _load_model_with_fallback(keras, resolved_path)
+
+
+def _resolve_hdf5_model_path(model_path: Path) -> Path:
+    """Return a valid HDF5 model path, downloading LFS content when needed."""
+
+    if _has_hdf5_signature(model_path):
+        return model_path
+    if _is_git_lfs_pointer_file(model_path):
+        downloaded_path = _download_hf_space_model(model_path)
+        _validate_hdf5_model_file(downloaded_path)
+        return downloaded_path
+
+    _validate_hdf5_model_file(model_path)
+    return model_path
 
 
 def _validate_hdf5_model_file(model_path: Path) -> None:
@@ -51,9 +68,62 @@ def _validate_hdf5_model_file(model_path: Path) -> None:
         )
 
 
+def _has_hdf5_signature(model_path: Path) -> bool:
+    try:
+        return _read_file_signature(model_path) == HDF5_SIGNATURE
+    except OSError:
+        return False
+
+
+def _is_git_lfs_pointer_file(model_path: Path) -> bool:
+    try:
+        size = model_path.stat().st_size
+        if not GIT_LFS_POINTER_MIN_BYTES <= size <= GIT_LFS_POINTER_MAX_BYTES:
+            return False
+        return _read_file_prefix(model_path, len(GIT_LFS_POINTER_PREFIX)) == GIT_LFS_POINTER_PREFIX
+    except OSError:
+        return False
+
+
+def _download_hf_space_model(model_path: Path) -> Path:
+    """Download the real model artifact when a Space checkout contains an LFS pointer."""
+
+    try:
+        from huggingface_hub import hf_hub_download
+    except ImportError as exc:
+        raise ModelLoadError(
+            "Model artifact is a Git LFS pointer, and huggingface_hub is required to download "
+            "the real model file."
+        ) from exc
+
+    filename = _space_model_filename(model_path)
+    try:
+        downloaded_path = hf_hub_download(
+            repo_id=configured_hf_space(),
+            repo_type="space",
+            filename=filename,
+            force_download=True,
+        )
+    except Exception as exc:
+        raise ModelLoadError(
+            f"Model artifact is a Git LFS pointer and could not be downloaded from "
+            f"Hugging Face Space {configured_hf_space()}: {filename}. {exc}"
+        ) from exc
+
+    return Path(downloaded_path)
+
+
+def _space_model_filename(model_path: Path) -> str:
+    return f"models/{model_path.name}"
+
+
 def _read_file_signature(model_path: Path) -> bytes:
+    return _read_file_prefix(model_path, len(HDF5_SIGNATURE))
+
+
+def _read_file_prefix(model_path: Path, length: int) -> bytes:
     with model_path.open("rb") as model_file:
-        return model_file.read(len(HDF5_SIGNATURE))
+        return model_file.read(length)
 
 
 def _load_model_with_fallback(keras: Any, resolved_path: Path) -> Any:

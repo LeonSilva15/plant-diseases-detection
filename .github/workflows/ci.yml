@@ -85,6 +85,7 @@ jobs:
           from huggingface_hub import HfApi, create_repo, hf_hub_download, upload_folder
 
           HDF5_SIGNATURE = b"\x89HDF\r\n\x1a\n"
+          LFS_H5_RULE = "*.h5 filter=lfs diff=lfs merge=lfs -text"
           MODEL_FILES = [
               Path("models/compressed_model.h5"),
               Path("models/model.h5"),
@@ -110,6 +111,21 @@ jobs:
               print(f"Verified HDF5 artifact: {path} ({size} bytes)")
               return size
 
+          def validate_lfs_attributes(path: Path) -> None:
+              if not path.exists():
+                  raise FileNotFoundError(f"Git attributes file is missing: {path}")
+
+              rules = [
+                  line.strip()
+                  for line in path.read_text(encoding="utf-8").splitlines()
+                  if line.strip() and not line.strip().startswith("#")
+              ]
+              if LFS_H5_RULE not in rules:
+                  raise RuntimeError(f"{path} must contain: {LFS_H5_RULE}")
+
+              print(f"Verified LFS attributes: {path}")
+
+          validate_lfs_attributes(Path(".gitattributes"))
           for model_path in MODEL_FILES:
               validate_hdf5_artifact(model_path)
 
@@ -124,6 +140,14 @@ jobs:
               space_sdk="gradio",
               exist_ok=True,
               token=hf_token,
+          )
+          api.upload_file(
+              path_or_fileobj=".gitattributes",
+              path_in_repo=".gitattributes",
+              repo_id=hf_space,
+              repo_type="space",
+              token=hf_token,
+              commit_message="Configure H5 model LFS attributes",
           )
           upload_folder(
               repo_id=hf_space,
@@ -141,6 +165,7 @@ jobs:
                   "__pycache__/*",
                   "dataset/*",
                   "matplotlib-*",
+                  "models/*.h5",
                   "plant-disease-mpl/*",
               ],
           )
@@ -156,6 +181,16 @@ jobs:
                   commit_message=f"Upload {model_path.name}",
               )
 
+          downloaded_attributes_path = Path(
+              hf_hub_download(
+                  repo_id=hf_space,
+                  repo_type="space",
+                  filename=".gitattributes",
+                  token=hf_token,
+                  force_download=True,
+              )
+          )
+          validate_lfs_attributes(downloaded_attributes_path)
           downloaded_model_path = Path(
               hf_hub_download(
                   repo_id=hf_space,

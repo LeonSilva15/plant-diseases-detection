@@ -40,6 +40,27 @@ def test_strip_legacy_depthwise_groups_only_updates_depthwise_layers():
     assert config["config"]["layers"][0]["config"]["groups"] == 1
 
 
+def test_validate_hdf5_model_file_accepts_hdf5_signature(tmp_path):
+    model_path = tmp_path / "model.h5"
+    model_path.write_bytes(runtime.HDF5_SIGNATURE + b"payload")
+
+    runtime._validate_hdf5_model_file(model_path)
+
+
+def test_load_keras_model_rejects_non_hdf5_artifact_before_tensorflow_import(tmp_path):
+    runtime.load_keras_model.cache_clear()
+    model_path = tmp_path / "model.h5"
+    model_path.write_bytes(b"version https://git-lfs.github.com/spec/v1\n")
+
+    with pytest.raises(ModelLoadError) as exc_info:
+        runtime.load_keras_model(str(model_path))
+
+    message = str(exc_info.value)
+    assert f"Model artifact is not a valid HDF5 file: {model_path}" in message
+    assert "76657273696f6e20" in message
+    assert "file size is 43 bytes" in message
+
+
 def test_load_model_with_fallback_reports_primary_and_fallback_failures(monkeypatch):
     class FailingModels:
         def load_model(self, path, compile=False):

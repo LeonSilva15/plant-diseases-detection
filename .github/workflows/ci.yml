@@ -81,29 +81,94 @@ jobs:
           python -m pip install --upgrade huggingface_hub
           python - <<'PY'
           import os
-          from huggingface_hub import create_repo, upload_folder
+          from pathlib import Path
+          from huggingface_hub import HfApi, create_repo, hf_hub_download, upload_folder
+
+          HDF5_SIGNATURE = b"\x89HDF\r\n\x1a\n"
+          MODEL_FILES = [
+              Path("models/compressed_model.h5"),
+              Path("models/model.h5"),
+              Path("models/pruned_model.h5"),
+          ]
+
+          def validate_hdf5_artifact(path: Path) -> int:
+              if not path.exists():
+                  raise FileNotFoundError(f"Model artifact is missing: {path}")
+
+              with path.open("rb") as model_file:
+                  signature = model_file.read(len(HDF5_SIGNATURE))
+              size = path.stat().st_size
+
+              if signature != HDF5_SIGNATURE:
+                  actual_signature = signature.hex() if signature else "<empty>"
+                  raise RuntimeError(
+                      f"{path} is not a valid HDF5 artifact. "
+                      f"Expected signature {HDF5_SIGNATURE.hex()}, got {actual_signature}; "
+                      f"size={size} bytes."
+                  )
+
+              print(f"Verified HDF5 artifact: {path} ({size} bytes)")
+              return size
+
+          for model_path in MODEL_FILES:
+              validate_hdf5_artifact(model_path)
+
+          expected_compressed_size = MODEL_FILES[0].stat().st_size
+          hf_token = os.environ["HF_TOKEN"]
+          hf_space = os.environ["HF_SPACE"]
+          api = HfApi(token=hf_token)
 
           create_repo(
-              repo_id=os.environ["HF_SPACE"],
+              repo_id=hf_space,
               repo_type="space",
               space_sdk="gradio",
               exist_ok=True,
-              token=os.environ["HF_TOKEN"],
+              token=hf_token,
           )
           upload_folder(
-              repo_id=os.environ["HF_SPACE"],
+              repo_id=hf_space,
               repo_type="space",
               folder_path=".",
               path_in_repo=".",
-              token=os.environ["HF_TOKEN"],
+              token=hf_token,
               ignore_patterns=[
                   ".git/*",
                   ".github/*",
                   ".pytest_cache/*",
                   ".ruff_cache/*",
+                  ".tmp/*",
                   ".venv/*",
                   "__pycache__/*",
                   "dataset/*",
+                  "matplotlib-*",
+                  "plant-disease-mpl/*",
               ],
           )
+
+          for model_path in MODEL_FILES:
+              print(f"Uploading model artifact explicitly: {model_path}")
+              api.upload_file(
+                  path_or_fileobj=str(model_path),
+                  path_in_repo=model_path.as_posix(),
+                  repo_id=hf_space,
+                  repo_type="space",
+                  token=hf_token,
+                  commit_message=f"Upload {model_path.name}",
+              )
+
+          downloaded_model_path = Path(
+              hf_hub_download(
+                  repo_id=hf_space,
+                  repo_type="space",
+                  filename=MODEL_FILES[0].as_posix(),
+                  token=hf_token,
+                  force_download=True,
+              )
+          )
+          downloaded_size = validate_hdf5_artifact(downloaded_model_path)
+          if downloaded_size != expected_compressed_size:
+              raise RuntimeError(
+                  "Downloaded Space model size mismatch: "
+                  f"expected {expected_compressed_size} bytes, got {downloaded_size} bytes."
+              )
           PY

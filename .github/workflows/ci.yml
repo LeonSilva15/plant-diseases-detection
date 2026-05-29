@@ -81,7 +81,7 @@ jobs:
           python -m pip install --upgrade huggingface_hub
           python - <<'PY'
           import os
-          from huggingface_hub import create_repo
+          from huggingface_hub import create_repo, upload_folder
 
           create_repo(
               repo_id=os.environ["HF_SPACE"],
@@ -90,14 +90,20 @@ jobs:
               exist_ok=True,
               token=os.environ["HF_TOKEN"],
           )
+          upload_folder(
+              repo_id=os.environ["HF_SPACE"],
+              repo_type="space",
+              folder_path=".",
+              path_in_repo=".",
+              token=os.environ["HF_TOKEN"],
+              ignore_patterns=[
+                  ".git/*",
+                  ".github/*",
+                  ".pytest_cache/*",
+                  ".ruff_cache/*",
+                  ".venv/*",
+                  "__pycache__/*",
+                  "dataset/*",
+              ],
+          )
           PY
-          huggingface-cli upload "$HF_SPACE" . . \
-            --repo-type=space \
-            --token "$HF_TOKEN" \
-            --exclude ".git/*" \
-            --exclude ".github/*" \
-            --exclude ".pytest_cache/*" \
-            --exclude ".ruff_cache/*" \
-            --exclude ".venv/*" \
-            --exclude "__pycache__/*" \
-            --exclude "dataset/*"

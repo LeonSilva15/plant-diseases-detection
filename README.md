@@ -20,7 +20,9 @@ Production-ready portfolio demo for classifying plant leaf diseases from images.
 application serves a compressed MobileNet transfer-learning model through a Gradio interface
 that accepts upload or webcam input and returns top disease predictions with confidence scores.
 
-Live demo target: https://huggingface.co/spaces/LeonSilva15/plant-diseases-detection
+<img src="assets/Gradio.png"/>
+
+> Live demo: https://huggingface.co/spaces/LeonSilva15/plant-diseases-detection
 
 ## What This Demonstrates
 

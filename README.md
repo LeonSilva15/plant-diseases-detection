@@ -138,6 +138,11 @@ The Space can also be created manually by uploading this repository to Hugging F
 
 ## Evidence From The Original Notebook
 
+| Classification report | Confusion matrix |
+|--|--|
+| <img src="https://github.com/LeonSilva15/plant-diseases-detection/assets/36859776/1a24753b-3850-4680-9575-236e1ef8d7ab" height="500" /> | <img src="https://github.com/LeonSilva15/plant-diseases-detection/assets/36859776/e5f9d399-2711-4be1-b6d5-7b157c27fd52" height="500" /> |
+
+<!--
 Classification report:
 
 ![classification_report](https://github.com/LeonSilva15/plant-diseases-detection/assets/36859776/1a24753b-3850-4680-9575-236e1ef8d7ab)
@@ -145,10 +150,16 @@ Classification report:
 Confusion matrix:
 
 ![confusion_matrix](https://github.com/LeonSilva15/plant-diseases-detection/assets/36859776/e5f9d399-2711-4be1-b6d5-7b157c27fd52)
+-->
 
 Example predictions:
 
-|  |  |
-|--|--|
+<img src="https://github.com/LeonSilva15/plant-diseases-detection/assets/36859776/c1cf2672-4ad1-4a5e-904c-c25204ebb219" width="400" />
+<img src="https://github.com/LeonSilva15/plant-diseases-detection/assets/36859776/8681d2f7-fead-40aa-a7d4-35e919eba38e" width="400" />
+<img src="https://github.com/LeonSilva15/plant-diseases-detection/assets/36859776/d5a9e381-1d5a-4a43-90b0-44a77be6a0a2" width="400" />
+<img src="https://github.com/LeonSilva15/plant-diseases-detection/assets/36859776/da0169be-f90e-4d69-b86d-d85a433ba167" width="400" />
+
+<!--
 | ![Prediction example 1](https://github.com/LeonSilva15/plant-diseases-detection/assets/36859776/c1cf2672-4ad1-4a5e-904c-c25204ebb219) | ![Prediction example 2](https://github.com/LeonSilva15/plant-diseases-detection/assets/36859776/8681d2f7-fead-40aa-a7d4-35e919eba38e) |
 | ![Prediction example 3](https://github.com/LeonSilva15/plant-diseases-detection/assets/36859776/d5a9e381-1d5a-4a43-90b0-44a77be6a0a2) | ![Prediction example 4](https://github.com/LeonSilva15/plant-diseases-detection/assets/36859776/da0169be-f90e-4d69-b86d-d85a433ba167) |
+-->
